@@ -1,18 +1,40 @@
 {
-  "name": "charm-dangle-auth",
+  "name": "charm-dangle-desktop",
   "version": "1.0.0",
   "private": true,
-  "description": "A tiny real sign-up/login website that opens the Charm Dangle artifact after a successful login.",
-  "main": "server.js",
+  "description": "A little lucky charm that hangs from the top of your screen.",
+  "main": "main.js",
   "scripts": {
-    "start": "node server.js"
+    "start": "electron .",
+    "dist": "electron-builder"
   },
-  "engines": {
-    "node": ">=18"
+  "devDependencies": {
+    "electron": "^31.0.0",
+    "electron-builder": "^24.13.3"
   },
-  "dependencies": {
-    "express": "^4.19.2",
-    "express-session": "^1.18.0",
-    "bcryptjs": "^2.4.3"
+  "build": {
+    "appId": "com.charmdangle.app",
+    "productName": "Charm Dangle",
+    "files": [
+      "main.js",
+      "preload.js",
+      "renderer/**/*",
+      "icon.png",
+      "icon16.png",
+      "icon32.png"
+    ],
+    "mac": {
+      "icon": "icon.png",
+      "target": "dmg",
+      "category": "public.app-category.lifestyle"
+    },
+    "win": {
+      "icon": "icon.png",
+      "target": "nsis"
+    },
+    "linux": {
+      "icon": "icon.png",
+      "target": "AppImage"
+    }
   }
 }
