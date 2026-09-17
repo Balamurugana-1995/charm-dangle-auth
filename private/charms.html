@@ -77,30 +77,106 @@
     padding: 18px 16px 0;
   }
 
-  .theme-toggle{
-    position: fixed;
-    top: 14px;
-    right: 14px;
+  .toolbar{
+    position: sticky;
+    top: 0;
+    z-index: 30;
     display:flex;
-    gap: 4px;
+    align-items:center;
+    justify-content: space-between;
+    gap: 14px;
+    padding: 8px 16px;
     background: var(--bg-1);
-    border-radius: 999px;
-    padding: 3px;
-    z-index: 20;
+    border-bottom: 1px solid var(--bg-2);
+    flex-wrap: wrap;
   }
-  .theme-toggle button{
-    width: 26px; height: 26px;
-    border-radius: 50%;
-    border: none;
-    background: transparent;
+  .tb-left{
+    display:flex; align-items:center; gap:9px;
+  }
+  .tb-logo{ font-size: 22px; line-height:1; }
+  .tb-title{
+    font-family:"Fraunces",Georgia,serif;
+    font-weight: 680;
+    font-size: 15.5px;
+    line-height:1.1;
+  }
+  .tb-tagline{
+    font-size: 10.5px;
     color: var(--muted);
-    cursor:pointer;
-    font-size: 13px;
-    display:flex; align-items:center; justify-content:center;
+    line-height:1.1;
   }
-  .theme-toggle button.active{
-    background: var(--bg-2);
+  .tb-menu{
+    display:flex; align-items:center; gap: 6px; flex-wrap: wrap;
+  }
+  .tb-btn{
+    display:flex; align-items:center; gap:6px;
+    background: transparent;
+    border: 1px solid transparent;
     color: var(--ink);
+    font-size: 12.5px;
+    font-family: inherit;
+    padding: 7px 10px;
+    border-radius: 9px;
+    cursor: pointer;
+    white-space: nowrap;
+  }
+  .tb-btn:hover{ background: var(--bg-2); }
+  .tb-btn.icon{ padding: 7px 9px; font-size: 14px; }
+  .tb-caret{ font-size: 9px; opacity: .7; }
+  .tb-dropdown{ position: relative; }
+  .tb-panel{
+    position:absolute;
+    top: calc(100% + 6px);
+    left: 0;
+    min-width: 190px;
+    max-height: 300px;
+    overflow-y: auto;
+    background: var(--bg-1);
+    border: 1px solid var(--bg-2);
+    border-radius: 12px;
+    padding: 6px;
+    box-shadow: 0 20px 40px -16px rgba(0,0,0,.5);
+    display: none;
+    z-index: 40;
+  }
+  .tb-panel.open{ display:block; }
+  .tb-panel-right{ left: auto; right: 0; }
+  .tb-panel-label{
+    font-size: 10.5px; text-transform: uppercase; letter-spacing: .04em;
+    color: var(--muted); padding: 6px 10px 2px;
+  }
+  .tb-item{
+    display:flex; align-items:center; gap:8px; width:100%;
+    background: none; border: none; text-align:left;
+    color: var(--ink); font-size: 13px; font-family: inherit;
+    padding: 8px 10px; border-radius: 8px; cursor: pointer;
+  }
+  .tb-item:hover{ background: var(--bg-2); }
+  .tb-item.selected{ font-weight: 600; }
+  .tb-item.selected::after{ content:"✓"; margin-left:auto; }
+  .tb-item.danger{ color: #C6544A; }
+  .tb-sep{ height:1px; background: var(--bg-2); margin: 6px 4px; }
+  .tb-volume{
+    display:flex; align-items:center; gap:6px;
+    font-size: 13px; color: var(--muted); padding: 0 6px;
+  }
+  .tb-volume input{ width: 70px; accent-color: var(--accent, #D9AE49); }
+  .tb-user{ padding-left:6px; }
+  .tb-avatar{
+    width: 22px; height:22px; border-radius:50%;
+    background: var(--bg-2); color: var(--ink);
+    display:flex; align-items:center; justify-content:center;
+    font-size: 11px; font-weight:700;
+  }
+  .tb-avatar.big{ width:36px; height:36px; font-size:14px; }
+  .tb-user-card{ display:flex; align-items:center; gap:10px; padding: 6px 8px 10px; }
+  .tb-user-name{ font-size: 13.5px; font-weight:600; }
+  .tb-user-sub{ font-size: 11px; color: var(--muted); }
+  #alwaysTopBtn.active{ background: var(--bg-2); color: var(--accent, #D9AE49); }
+  @media (max-width: 720px){
+    .tb-tagline{ display:none; }
+    .tb-volume{ display:none; }
+    .tb-btn span:not(.tb-caret){ max-width: 70px; overflow:hidden; text-overflow:ellipsis; }
   }
 
   .stage{
@@ -490,13 +566,74 @@
 </head>
 <body>
 
-<div class="theme-toggle" role="group" aria-label="Theme">
-  <button data-theme-btn="auto" class="active" title="Auto" aria-label="Auto theme">◐</button>
-  <button data-theme-btn="light" title="Light" aria-label="Light theme">☀</button>
-  <button data-theme-btn="dark" title="Dark" aria-label="Dark theme">☾</button>
-</div>
+<div class="toolbar" role="banner">
+  <div class="tb-left">
+    <span class="tb-logo">🧿</span>
+    <div class="tb-brand">
+      <div class="tb-title">Charm</div>
+      <div class="tb-tagline">Little Joy, Always With You</div>
+    </div>
+  </div>
 
-<p class="top-note">drag the charm — pull it down, flick it, or give it a tap</p>
+  <div class="tb-menu">
+    <div class="tb-dropdown" id="charmDropdownWrap">
+      <button class="tb-btn" id="charmDropdownBtn">
+        <span id="tbCharmEmoji">🧿</span>
+        <span id="tbCharmName">Charm</span>
+        <span class="tb-caret">▾</span>
+      </button>
+      <div class="tb-panel" id="charmDropdownPanel"></div>
+    </div>
+
+    <div class="tb-dropdown" id="animDropdownWrap">
+      <button class="tb-btn" id="animDropdownBtn">Animation <span class="tb-caret">▾</span></button>
+      <div class="tb-panel" id="animDropdownPanel">
+        <button class="tb-item selected" data-anim="sway">🌬️ Gentle sway</button>
+        <button class="tb-item" data-anim="still">🧊 Still</button>
+      </div>
+    </div>
+
+    <div class="tb-dropdown" id="settingsDropdownWrap">
+      <button class="tb-btn icon" id="settingsBtn" title="Settings">⚙</button>
+      <div class="tb-panel" id="settingsPanel">
+        <div class="tb-panel-label">Theme</div>
+        <button class="tb-item" data-theme-opt="auto">◐ Auto</button>
+        <button class="tb-item" data-theme-opt="light">☀ Light</button>
+        <button class="tb-item" data-theme-opt="dark">☾ Dark</button>
+        <div class="tb-sep"></div>
+        <button class="tb-item" id="hideToggleItem">👁 Hide charm</button>
+      </div>
+    </div>
+
+    <button class="tb-btn icon" id="alwaysTopBtn" title="Always on top — a browser tab can't really do this; this is just a visual switch">🔔</button>
+
+    <div class="tb-volume" title="No sound in this app yet">
+      <span>🔊</span>
+      <input type="range" min="0" max="100" value="70" id="volumeSlider" />
+    </div>
+
+    <div class="tb-dropdown" id="userDropdownWrap">
+      <button class="tb-btn tb-user" id="userDropdownBtn">
+        <span class="tb-avatar" id="tbAvatar">?</span>
+        <span id="tbUserName">…</span>
+        <span class="tb-caret">▾</span>
+      </button>
+      <div class="tb-panel tb-panel-right" id="userPanel">
+        <div class="tb-user-card">
+          <span class="tb-avatar big" id="tbAvatarBig">?</span>
+          <div>
+            <div class="tb-user-name" id="tbUserNameBig">…</div>
+            <div class="tb-user-sub">Charm Dangle account</div>
+          </div>
+        </div>
+        <div class="tb-sep"></div>
+        <button class="tb-item" id="helpItem">❓ Help &amp; Support</button>
+        <div class="tb-sep"></div>
+        <button class="tb-item danger" id="logoutItem">↪ Logout</button>
+      </div>
+    </div>
+  </div>
+</div>
 
 <div class="stage">
   <div class="rail"></div>
@@ -531,13 +668,9 @@
   </div>
 </div>
 
-<div class="shelf">
-  <div class="chips" id="chips"></div>
-  <div class="custom-input" id="customInput" style="display:none;">
-    <label for="emojiField">your charm</label>
-    <input id="emojiField" maxlength="4" value="⭐" />
-  </div>
-  <button class="pill ghost" id="hideBtn">Hide it away</button>
+<div class="custom-input" id="customInput" style="display:none;">
+  <label for="emojiField">your charm</label>
+  <input id="emojiField" maxlength="4" value="⭐" />
 </div>
 
 <footer>a little demo, in the spirit of charms hung near a doorway</footer>
@@ -601,9 +734,12 @@ var DRISHTI_SRC = "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAVQAAAFOCAYAAAD
   var charmImg = document.getElementById("charmImg");
   var glowRing = document.getElementById("glowRing");
   var ripple = document.getElementById("ripple");
-  var chipsWrap = document.getElementById("chips");
+  var charmDropdownWrap = document.getElementById("charmDropdownWrap");
+  var charmDropdownBtn = document.getElementById("charmDropdownBtn");
+  var charmDropdownPanel = document.getElementById("charmDropdownPanel");
+  var tbCharmEmoji = document.getElementById("tbCharmEmoji");
+  var tbCharmName = document.getElementById("tbCharmName");
   var ritualBtn = document.getElementById("ritualBtn");
-  var hideBtn = document.getElementById("hideBtn");
   var customInput = document.getElementById("customInput");
   var emojiField = document.getElementById("emojiField");
   var wishHint = document.getElementById("wishHint");
@@ -687,46 +823,35 @@ var DRISHTI_SRC = "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAVQAAAFOCAYAAAD
     mouseY = null;
   });
 
+  function charmGlyphHTML(c){
+    if (c.image){
+      return '<img src="' + c.src + '" alt="" style="width:20px;height:20px;object-fit:contain;vertical-align:-4px;">';
+    }
+    return '<span>' + (c.custom ? (emojiField.value || "⭐") : c.emoji) + '</span>';
+  }
+
   function buildChips(){
+    charmDropdownPanel.innerHTML = "";
     charms.forEach(function(c, i){
       var b = document.createElement("button");
-      b.className = "chip" + (i === activeIndex ? " active" : "");
-      if (c.image){
-        var img = document.createElement("img");
-        img.src = c.src;
-        img.alt = "";
-        img.style.width = "24px";
-        img.style.height = "24px";
-        img.style.objectFit = "contain";
-        b.appendChild(img);
-      } else {
-        b.textContent = c.emoji;
-      }
-      b.setAttribute("aria-label", c.name);
-      b.addEventListener("click", function(){ selectCharm(i); });
-      chipsWrap.appendChild(b);
+      b.className = "tb-item" + (i === activeIndex ? " selected" : "");
+      b.innerHTML = charmGlyphHTML(c) + '<span>' + c.name + '</span>';
+      b.addEventListener("click", function(){ selectCharm(i); closeAllPanels(); });
+      charmDropdownPanel.appendChild(b);
     });
   }
 
   function refreshChips(){
-    var kids = chipsWrap.children;
+    var kids = charmDropdownPanel.children;
     for (var i = 0; i < kids.length; i++){
-      kids[i].classList.toggle("active", i === activeIndex);
+      kids[i].classList.toggle("selected", i === activeIndex);
       var c = charms[i];
-      if (c.image){
-        kids[i].textContent = "";
-        var img = document.createElement("img");
-        img.src = c.src;
-        img.alt = "";
-        img.style.width = "24px";
-        img.style.height = "24px";
-        img.style.objectFit = "contain";
-        kids[i].appendChild(img);
-      } else if (i === activeIndex && c.custom){
-        kids[i].textContent = emojiField.value || "⭐";
-      } else {
-        kids[i].textContent = c.emoji;
-      }
+      kids[i].innerHTML = charmGlyphHTML(c) + '<span>' + c.name + '</span>';
+    }
+    var active = charms[activeIndex];
+    if (active){
+      tbCharmEmoji.innerHTML = charmGlyphHTML(active);
+      tbCharmName.textContent = active.name;
     }
   }
 
@@ -951,11 +1076,16 @@ var DRISHTI_SRC = "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAVQAAAFOCAYAAAD
 
   ritualBtn.addEventListener("click", performRitual);
 
-  hideBtn.addEventListener("click", function(){
+  var hideToggleItem = document.getElementById("hideToggleItem");
+  function updateHideLabel(){
+    hideToggleItem.textContent = hidden ? "👁 Bring it back" : "👁 Hide charm";
+  }
+  hideToggleItem.addEventListener("click", function(){
     hidden = !hidden;
     rig.classList.toggle("hidden", hidden);
-    hideBtn.textContent = hidden ? "Bring it back" : "Hide it away";
+    updateHideLabel();
   });
+  updateHideLabel();
 
   emojiField.addEventListener("input", function(){
     if (charms[activeIndex].custom){
@@ -965,19 +1095,92 @@ var DRISHTI_SRC = "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAVQAAAFOCAYAAAD
     }
   });
 
-  // ---- theme toggle ----
-  var themeButtons = document.querySelectorAll("[data-theme-btn]");
+  // ---- toolbar dropdowns ----
+  var allPanels = document.querySelectorAll(".tb-panel");
+  function closeAllPanels(){
+    allPanels.forEach(function(p){ p.classList.remove("open"); });
+  }
+  function wireDropdown(btnId, panelId){
+    var btn = document.getElementById(btnId);
+    var panel = document.getElementById(panelId);
+    btn.addEventListener("click", function(e){
+      e.stopPropagation();
+      var wasOpen = panel.classList.contains("open");
+      closeAllPanels();
+      if (!wasOpen) panel.classList.add("open");
+    });
+  }
+  wireDropdown("charmDropdownBtn", "charmDropdownPanel");
+  wireDropdown("animDropdownBtn", "animDropdownPanel");
+  wireDropdown("settingsBtn", "settingsPanel");
+  wireDropdown("userDropdownBtn", "userPanel");
+  document.addEventListener("click", closeAllPanels);
+  allPanels.forEach(function(p){ p.addEventListener("click", function(e){ e.stopPropagation(); }); });
+
+  // ---- animation menu: gentle sway vs still ----
+  var BASE_AMBIENT_AMP = AMBIENT_AMP;
+  document.querySelectorAll("[data-anim]").forEach(function(btn){
+    btn.addEventListener("click", function(){
+      var mode = btn.getAttribute("data-anim");
+      AMBIENT_AMP = mode === "still" ? 0 : BASE_AMBIENT_AMP;
+      document.querySelectorAll("[data-anim]").forEach(function(b){ b.classList.remove("selected"); });
+      btn.classList.add("selected");
+      closeAllPanels();
+    });
+  });
+
+  // ---- settings: theme ----
+  var themeButtons = document.querySelectorAll("[data-theme-opt]");
   themeButtons.forEach(function(btn){
     btn.addEventListener("click", function(){
-      var mode = btn.getAttribute("data-theme-btn");
-      themeButtons.forEach(function(b){ b.classList.remove("active"); });
-      btn.classList.add("active");
+      var mode = btn.getAttribute("data-theme-opt");
+      themeButtons.forEach(function(b){ b.classList.remove("selected"); });
+      btn.classList.add("selected");
       if (mode === "auto"){
         document.documentElement.removeAttribute("data-theme");
       } else {
         document.documentElement.setAttribute("data-theme", mode);
       }
+      closeAllPanels();
     });
+  });
+  var autoThemeBtn = document.querySelector('[data-theme-opt="auto"]');
+  if (autoThemeBtn) autoThemeBtn.classList.add("selected");
+
+  // ---- always on top: a browser tab can't really do this, so it's a visual-only switch ----
+  var alwaysTopBtn = document.getElementById("alwaysTopBtn");
+  alwaysTopBtn.addEventListener("click", function(){
+    alwaysTopBtn.classList.toggle("active");
+  });
+
+  // ---- user menu: who's signed in, plus logout ----
+  var tbAvatar = document.getElementById("tbAvatar");
+  var tbAvatarBig = document.getElementById("tbAvatarBig");
+  var tbUserName = document.getElementById("tbUserName");
+  var tbUserNameBig = document.getElementById("tbUserNameBig");
+  var helpItem = document.getElementById("helpItem");
+  var logoutItem = document.getElementById("logoutItem");
+
+  fetch("/api/me", { credentials: "same-origin" })
+    .then(function(r){ return r.json(); })
+    .then(function(data){
+      var name = data.user || (data.isAdmin ? "Admin" : "Guest");
+      tbUserName.textContent = name;
+      tbUserNameBig.textContent = name;
+      var initial = name.charAt(0).toUpperCase() || "?";
+      tbAvatar.textContent = initial;
+      tbAvatarBig.textContent = initial;
+    })
+    .catch(function(){});
+
+  helpItem.addEventListener("click", function(){
+    alert("Drag the charm to swing or pull it. Tap it for its ritual. Pick a different charm from the menu above.");
+    closeAllPanels();
+  });
+
+  logoutItem.addEventListener("click", function(){
+    fetch("/api/logout", { method: "POST", credentials: "same-origin" })
+      .then(function(){ window.location.href = "/"; });
   });
 
   // ---- physics loop ----

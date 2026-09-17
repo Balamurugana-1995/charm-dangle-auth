@@ -10,17 +10,17 @@ const DATA_FILE = path.join(__dirname, 'data', 'users.json');
 const CHARM_CONFIG_FILE = path.join(__dirname, 'data', 'charm-config.json');
 
 // The full set of charms the Charm Dangle page knows how to show.
-// Keep this list in sync with the `id` values inside public/charms.html.
+// Keep this list in sync with the `id` values inside private/charms.html.
 const ALL_CHARM_IDS = ['nazar', 'hamsa', 'ghanta', 'doll', 'drishti', 'nimbu', 'clover', 'custom'];
-const CHARM_NAMES = {
-  nazar: 'Nazar boncuğu (evil eye)',
-  hamsa: 'Hamsa',
-  ghanta: 'Ghanta (bell)',
-  doll: 'Wishing doll',
-  drishti: 'Drishti guardian',
-  nimbu: 'Nimbu-mirchi',
-  clover: 'Four-leaf clover',
-  custom: 'Your own charm (emoji)'
+const CHARM_META = {
+  nazar: { name: 'Nazar boncuğu (evil eye)', emoji: '🧿' },
+  hamsa: { name: 'Hamsa', emoji: '🪬' },
+  ghanta: { name: 'Ghanta (bell)', emoji: '🔔' },
+  doll: { name: 'Wishing doll', emoji: '🪆' },
+  drishti: { name: 'Drishti guardian', emoji: '👹' },
+  nimbu: { name: 'Nimbu-mirchi', emoji: '🌶️' },
+  clover: { name: 'Four-leaf clover', emoji: '🍀' },
+  custom: { name: 'Your own charm', emoji: '⭐' }
 };
 
 // Where a logged-in (non-admin) user is sent after a successful login —
@@ -173,7 +173,7 @@ app.get('/api/charm-config', requireLogin, (req, res) => {
 app.get('/api/admin/charm-config', requireAdmin, (req, res) => {
   var cfg = loadCharmConfig();
   var all = ALL_CHARM_IDS.map(function (id) {
-    return { id: id, name: CHARM_NAMES[id] || id, enabled: cfg.enabled.indexOf(id) !== -1 };
+    return { id: id, name: (CHARM_META[id] && CHARM_META[id].name) || id, enabled: cfg.enabled.indexOf(id) !== -1 };
   });
   res.json({ charms: all });
 });
