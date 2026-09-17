@@ -1,0 +1,277 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<title>Charm Dangle — Sign in</title>
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,400;9..144,560;9..144,680&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --bg-0:#1B1B1F; --bg-1:#232329; --bg-2:#2B2B32;
+    --ink:#EDEAE3; --muted:#9C978C; --accent:#D9AE49; --danger:#C6544A;
+  }
+  *{ box-sizing:border-box; }
+  body{
+    margin:0; min-height:100vh;
+    background: radial-gradient(120% 90% at 50% 0%, var(--bg-1), var(--bg-0) 60%);
+    color: var(--ink);
+    font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",system-ui,sans-serif;
+    display:flex; align-items:center; justify-content:center; padding:24px;
+  }
+  .card{
+    width:100%; max-width:380px;
+    background:var(--bg-1); border:1px solid var(--bg-2);
+    border-radius:20px; padding:32px 28px;
+    box-shadow:0 30px 60px -20px rgba(0,0,0,.5);
+  }
+  h1{
+    font-family:"Fraunces",Georgia,serif; font-weight:560;
+    font-size:26px; margin:0 0 4px; text-align:center;
+  }
+  .sub{ text-align:center; font-size:13px; color:var(--muted); margin-bottom:24px; }
+  .tabs{ display:flex; background:var(--bg-2); border-radius:12px; padding:4px; margin-bottom:20px; }
+  .tabs button{
+    flex:1; padding:8px 0; border:none; background:transparent; border-radius:9px;
+    color:var(--muted); font-size:13.5px; cursor:pointer;
+  }
+  .tabs button.active{ background:var(--bg-0); color:var(--ink); }
+  label{ display:block; font-size:12.5px; color:var(--muted); margin:14px 0 6px; }
+  input{
+    width:100%; padding:11px 12px; border-radius:10px; border:1px solid var(--bg-2);
+    background:var(--bg-0); color:var(--ink); font-size:14.5px; font-family:inherit;
+  }
+  input:focus-visible{ outline:2px solid var(--accent); }
+  button.primary{
+    width:100%; margin-top:22px; padding:12px 0; border:none; border-radius:12px;
+    background:var(--accent); color:#20180a; font-weight:600; font-size:14.5px; cursor:pointer;
+  }
+  button.primary:active{ transform:scale(.98); }
+  button.primary:disabled{ opacity:.6; cursor:default; }
+  .msg{ min-height:18px; font-size:12.5px; margin-top:10px; text-align:center; }
+  .msg.err{ color:var(--danger); }
+  .welcome{ text-align:center; }
+  .welcome .name{ font-family:"Fraunces",Georgia,serif; font-size:22px; margin:6px 0 18px; }
+  a.enter{
+    display:block; text-decoration:none; margin-top:6px;
+    padding:13px 0; border-radius:12px; background:var(--accent); color:#20180a;
+    font-weight:600; font-size:14.5px;
+  }
+  button.ghost{
+    width:100%; margin-top:10px; padding:10px 0; border-radius:10px;
+    background:transparent; border:1px solid var(--bg-2); color:var(--muted);
+    font-size:13px; cursor:pointer;
+  }
+  table{ width:100%; border-collapse:collapse; margin-top:14px; font-size:13px; }
+  th,td{ text-align:left; padding:8px 6px; border-bottom:1px solid var(--bg-2); }
+  th{ color:var(--muted); font-weight:500; }
+  .row-del{ color:var(--danger); background:none; border:none; cursor:pointer; font-size:12px; }
+  .hidden{ display:none !important; }
+  .note{ font-size:11px; color:var(--muted); margin-top:16px; text-align:center; line-height:1.5; }
+</style>
+</head>
+<body>
+
+<div class="card" id="card">
+
+  <div id="authView">
+    <h1>🧿 Charm Dangle</h1>
+    <div class="sub">Sign in to hang your charms</div>
+
+    <div class="tabs">
+      <button id="tabLogin" class="active">Log in</button>
+      <button id="tabSignup">Sign up</button>
+    </div>
+
+    <label for="username">Username</label>
+    <input id="username" autocomplete="username" autocapitalize="none" autocorrect="off" spellcheck="false" placeholder="e.g. karthik" />
+
+    <label for="password">Password</label>
+    <input id="password" type="password" autocomplete="current-password" placeholder="••••••••" />
+
+    <button class="primary" id="submitBtn">Log in</button>
+    <div class="msg" id="msg"></div>
+  </div>
+
+  <div id="welcomeView" class="welcome hidden">
+    <h1>🧿 Welcome back</h1>
+    <div class="name" id="welcomeName"></div>
+    <a class="enter" id="enterLink" href="#" target="_blank" rel="noopener">Open your charms →</a>
+    <button class="ghost" id="logoutBtn">Log out</button>
+  </div>
+
+  <div id="adminView" class="hidden">
+    <h1>🔐 Admin</h1>
+    <div class="sub">Registered users (all devices)</div>
+    <table>
+      <thead><tr><th>Username</th><th>Joined</th><th></th></tr></thead>
+      <tbody id="userRows"></tbody>
+    </table>
+    <div class="note" id="emptyNote"></div>
+    <button class="ghost" id="adminBack">Log out</button>
+  </div>
+
+  <div class="note">Real accounts — stored on the server, visible to the admin from any device.</div>
+</div>
+
+<script>
+(function(){
+  "use strict";
+
+  var authView = document.getElementById("authView");
+  var welcomeView = document.getElementById("welcomeView");
+  var adminView = document.getElementById("adminView");
+
+  var tabLogin = document.getElementById("tabLogin");
+  var tabSignup = document.getElementById("tabSignup");
+  var usernameEl = document.getElementById("username");
+  var passwordEl = document.getElementById("password");
+  var submitBtn = document.getElementById("submitBtn");
+  var msgEl = document.getElementById("msg");
+
+  var welcomeName = document.getElementById("welcomeName");
+  var enterLink = document.getElementById("enterLink");
+  var logoutBtn = document.getElementById("logoutBtn");
+
+  var userRows = document.getElementById("userRows");
+  var emptyNote = document.getElementById("emptyNote");
+  var adminBack = document.getElementById("adminBack");
+
+  var mode = "login";
+
+  function setMode(m){
+    mode = m;
+    tabLogin.classList.toggle("active", m === "login");
+    tabSignup.classList.toggle("active", m === "signup");
+    submitBtn.textContent = m === "login" ? "Log in" : "Sign up";
+    passwordEl.autocomplete = m === "login" ? "current-password" : "new-password";
+    showMsg("");
+  }
+  tabLogin.addEventListener("click", function(){ setMode("login"); });
+  tabSignup.addEventListener("click", function(){ setMode("signup"); });
+
+  function showMsg(text, kind){
+    msgEl.textContent = text || "";
+    msgEl.className = "msg " + (kind || "");
+  }
+
+  function showAuth(){
+    welcomeView.classList.add("hidden");
+    adminView.classList.add("hidden");
+    authView.classList.remove("hidden");
+    passwordEl.value = "";
+    showMsg("");
+  }
+
+  function showWelcome(name, charmUrl){
+    authView.classList.add("hidden");
+    adminView.classList.add("hidden");
+    welcomeView.classList.remove("hidden");
+    welcomeName.textContent = name;
+    enterLink.href = charmUrl;
+  }
+
+  function showAdmin(){
+    authView.classList.add("hidden");
+    welcomeView.classList.add("hidden");
+    adminView.classList.remove("hidden");
+    loadUserList();
+  }
+
+  function loadUserList(){
+    fetch("/api/admin/users", { credentials: "same-origin" })
+      .then(function(r){ return r.json(); })
+      .then(function(data){
+        userRows.innerHTML = "";
+        var users = data.users || [];
+        if (users.length === 0){
+          emptyNote.textContent = "No one has signed up yet.";
+          return;
+        }
+        emptyNote.textContent = "";
+        users.forEach(function(u){
+          var tr = document.createElement("tr");
+          var tdName = document.createElement("td");
+          tdName.textContent = u.username;
+          var tdDate = document.createElement("td");
+          tdDate.textContent = u.createdAt ? new Date(u.createdAt).toLocaleDateString() : "";
+          var tdDel = document.createElement("td");
+          var btn = document.createElement("button");
+          btn.className = "row-del";
+          btn.textContent = "Remove";
+          btn.addEventListener("click", function(){
+            fetch("/api/admin/remove", {
+              method: "POST",
+              credentials: "same-origin",
+              headers: { "Content-Type": "application/json" },
+              body: JSON.stringify({ username: u.username })
+            }).then(loadUserList);
+          });
+          tdDel.appendChild(btn);
+          tr.appendChild(tdName); tr.appendChild(tdDate); tr.appendChild(tdDel);
+          userRows.appendChild(tr);
+        });
+      });
+  }
+
+  function doLogout(){
+    fetch("/api/logout", { method: "POST", credentials: "same-origin" }).then(showAuth);
+  }
+  logoutBtn.addEventListener("click", doLogout);
+  adminBack.addEventListener("click", doLogout);
+
+  usernameEl.addEventListener("keydown", function(e){
+    if (e.key === "Enter"){ e.preventDefault(); passwordEl.focus(); }
+  });
+  passwordEl.addEventListener("keydown", function(e){
+    if (e.key === "Enter"){ e.preventDefault(); submitBtn.click(); }
+  });
+
+  submitBtn.addEventListener("click", function(){
+    var name = usernameEl.value.trim();
+    var pass = passwordEl.value.trim();
+    if (!name || !pass){
+      showMsg("Enter a username and password.", "err");
+      return;
+    }
+    submitBtn.disabled = true;
+    var url = mode === "signup" ? "/api/signup" : "/api/login";
+    fetch(url, {
+      method: "POST",
+      credentials: "same-origin",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ username: name, password: pass })
+    })
+      .then(function(r){ return r.json().then(function(data){ return { ok: r.ok, data: data }; }); })
+      .then(function(res){
+        submitBtn.disabled = false;
+        if (!res.ok){
+          showMsg(res.data.error || "Something went wrong.", "err");
+          return;
+        }
+        if (res.data.admin){
+          showAdmin();
+        } else {
+          showWelcome(res.data.user, res.data.charmUrl);
+        }
+      })
+      .catch(function(){
+        submitBtn.disabled = false;
+        showMsg("Couldn't reach the server. Try again.", "err");
+      });
+  });
+
+  // Resume an existing session on load.
+  fetch("/api/me", { credentials: "same-origin" })
+    .then(function(r){ return r.json(); })
+    .then(function(data){
+      if (data.isAdmin) showAdmin();
+      else if (data.user) showWelcome(data.user, data.charmUrl);
+      else setMode("login");
+    })
+    .catch(function(){ setMode("login"); });
+})();
+</script>
+</body>
+</html>
