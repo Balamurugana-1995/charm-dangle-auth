@@ -97,13 +97,19 @@
   <div id="welcomeView" class="welcome hidden">
     <h1>🧿 Welcome back</h1>
     <div class="name" id="welcomeName"></div>
-    <a class="enter" id="enterLink" href="#" target="_blank" rel="noopener">Open your charms →</a>
+    <a class="enter" id="enterLink" href="#">Open your charms →</a>
     <button class="ghost" id="logoutBtn">Log out</button>
   </div>
 
   <div id="adminView" class="hidden">
-    <h1>🔐 Admin</h1>
-    <div class="sub">Registered users (all devices)</div>
+    <h1>🔐 Charm Control</h1>
+    <div class="sub">Admin — choose which charms show up</div>
+
+    <div id="charmToggles"></div>
+    <button class="primary" id="saveCharmsBtn" style="margin-top:16px;">Save charms</button>
+    <div class="msg" id="charmMsg"></div>
+
+    <div class="sub" style="margin-top:26px;">Registered users</div>
     <table>
       <thead><tr><th>Username</th><th>Joined</th><th></th></tr></thead>
       <tbody id="userRows"></tbody>
@@ -114,6 +120,15 @@
 
   <div class="note">Real accounts — stored on the server, visible to the admin from any device.</div>
 </div>
+
+<style>
+  .charm-row{
+    display:flex; align-items:center; justify-content:space-between;
+    padding:9px 0; border-bottom:1px solid var(--bg-2); font-size:13.5px;
+  }
+  .charm-row label{ margin:0; color:var(--ink); font-size:13.5px; }
+  .charm-row input[type=checkbox]{ width:18px; height:18px; accent-color:var(--accent); }
+</style>
 
 <script>
 (function(){
@@ -137,6 +152,9 @@
   var userRows = document.getElementById("userRows");
   var emptyNote = document.getElementById("emptyNote");
   var adminBack = document.getElementById("adminBack");
+  var charmToggles = document.getElementById("charmToggles");
+  var saveCharmsBtn = document.getElementById("saveCharmsBtn");
+  var charmMsg = document.getElementById("charmMsg");
 
   var mode = "login";
 
@@ -170,6 +188,11 @@
     welcomeView.classList.remove("hidden");
     welcomeName.textContent = name;
     enterLink.href = charmUrl;
+    // Take the user straight to their charms; the button stays as a
+    // fallback in case the browser blocks the automatic navigation.
+    setTimeout(function(){
+      window.location.href = charmUrl;
+    }, 700);
   }
 
   function showAdmin(){
@@ -177,7 +200,48 @@
     welcomeView.classList.add("hidden");
     adminView.classList.remove("hidden");
     loadUserList();
+    loadCharmToggles();
   }
+
+  function loadCharmToggles(){
+    fetch("/api/admin/charm-config", { credentials: "same-origin" })
+      .then(function(r){ return r.json(); })
+      .then(function(data){
+        charmToggles.innerHTML = "";
+        (data.charms || []).forEach(function(c){
+          var row = document.createElement("div");
+          row.className = "charm-row";
+          var label = document.createElement("label");
+          label.textContent = c.name;
+          label.setAttribute("for", "charm_" + c.id);
+          var input = document.createElement("input");
+          input.type = "checkbox";
+          input.id = "charm_" + c.id;
+          input.dataset.id = c.id;
+          input.checked = !!c.enabled;
+          row.appendChild(label);
+          row.appendChild(input);
+          charmToggles.appendChild(row);
+        });
+      });
+  }
+
+  saveCharmsBtn.addEventListener("click", function(){
+    var boxes = charmToggles.querySelectorAll("input[type=checkbox]");
+    var enabled = [];
+    boxes.forEach(function(b){ if (b.checked) enabled.push(b.dataset.id); });
+    fetch("/api/admin/charm-config", {
+      method: "POST",
+      credentials: "same-origin",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ enabled: enabled })
+    })
+      .then(function(r){ return r.json().then(function(d){ return { ok: r.ok, d: d }; }); })
+      .then(function(res){
+        charmMsg.className = "msg " + (res.ok ? "ok" : "err");
+        charmMsg.textContent = res.ok ? "Saved." : (res.d.error || "Couldn't save.");
+      });
+  });
 
   function loadUserList(){
     fetch("/api/admin/users", { credentials: "same-origin" })

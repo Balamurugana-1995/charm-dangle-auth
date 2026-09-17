@@ -7,9 +7,26 @@ const path = require('path');
 const app = express();
 const PORT = process.env.PORT || 3000;
 const DATA_FILE = path.join(__dirname, 'data', 'users.json');
+const CHARM_CONFIG_FILE = path.join(__dirname, 'data', 'charm-config.json');
 
-// Where a logged-in (non-admin) user is sent after a successful login.
-const CHARM_URL = 'https://claude.ai/artifact/GxaC6r2yYervCB1amNmSsT';
+// The full set of charms the Charm Dangle page knows how to show.
+// Keep this list in sync with the `id` values inside public/charms.html.
+const ALL_CHARM_IDS = ['nazar', 'hamsa', 'ghanta', 'doll', 'drishti', 'nimbu', 'clover', 'custom'];
+const CHARM_NAMES = {
+  nazar: 'Nazar boncuğu (evil eye)',
+  hamsa: 'Hamsa',
+  ghanta: 'Ghanta (bell)',
+  doll: 'Wishing doll',
+  drishti: 'Drishti guardian',
+  nimbu: 'Nimbu-mirchi',
+  clover: 'Four-leaf clover',
+  custom: 'Your own charm (emoji)'
+};
+
+// Where a logged-in (non-admin) user is sent after a successful login —
+// now served by this same app (see the protected /charms route below),
+// so the admin's charm on/off choices actually take effect for everyone.
+const CHARM_URL = '/charms';
 
 // --- Admin credentials -----------------------------------------------------
 // Change these before you deploy anywhere real. Better still: delete the
@@ -27,6 +44,9 @@ if (!fs.existsSync(path.dirname(DATA_FILE))) {
 if (!fs.existsSync(DATA_FILE)) {
   fs.writeFileSync(DATA_FILE, '{}');
 }
+if (!fs.existsSync(CHARM_CONFIG_FILE)) {
+  fs.writeFileSync(CHARM_CONFIG_FILE, JSON.stringify({ enabled: ALL_CHARM_IDS }, null, 2));
+}
 
 function loadUsers() {
   try {
@@ -38,6 +58,20 @@ function loadUsers() {
 
 function saveUsers(users) {
   fs.writeFileSync(DATA_FILE, JSON.stringify(users, null, 2));
+}
+
+function loadCharmConfig() {
+  try {
+    var cfg = JSON.parse(fs.readFileSync(CHARM_CONFIG_FILE, 'utf8'));
+    if (!Array.isArray(cfg.enabled) || cfg.enabled.length === 0) cfg.enabled = ALL_CHARM_IDS.slice();
+    return cfg;
+  } catch (e) {
+    return { enabled: ALL_CHARM_IDS.slice() };
+  }
+}
+
+function saveCharmConfig(cfg) {
+  fs.writeFileSync(CHARM_CONFIG_FILE, JSON.stringify(cfg, null, 2));
 }
 
 app.use(express.json());
@@ -56,6 +90,16 @@ app.use(
     }
   })
 );
+
+function requireLogin(req, res, next) {
+  if (req.session.user || req.session.isAdmin) return next();
+  res.redirect('/');
+}
+
+function requireAdmin(req, res, next) {
+  if (req.session.isAdmin) return next();
+  res.status(403).json({ error: 'Not authorized.' });
+}
 
 app.post('/api/signup', (req, res) => {
   const { username, password } = req.body || {};
@@ -114,6 +158,34 @@ app.get('/api/me', (req, res) => {
     isAdmin: !!req.session.isAdmin,
     charmUrl: CHARM_URL
   });
+});
+
+app.get('/charms', requireLogin, (req, res) => {
+  res.sendFile(path.join(__dirname, 'private', 'charms.html'));
+});
+
+// Anyone logged in can read which charms are turned on (the charms page
+// itself calls this to decide what to show).
+app.get('/api/charm-config', requireLogin, (req, res) => {
+  res.json(loadCharmConfig());
+});
+
+app.get('/api/admin/charm-config', requireAdmin, (req, res) => {
+  var cfg = loadCharmConfig();
+  var all = ALL_CHARM_IDS.map(function (id) {
+    return { id: id, name: CHARM_NAMES[id] || id, enabled: cfg.enabled.indexOf(id) !== -1 };
+  });
+  res.json({ charms: all });
+});
+
+app.post('/api/admin/charm-config', requireAdmin, (req, res) => {
+  var enabled = (req.body && req.body.enabled) || [];
+  enabled = enabled.filter(function (id) { return ALL_CHARM_IDS.indexOf(id) !== -1; });
+  if (enabled.length === 0) {
+    return res.status(400).json({ error: 'At least one charm has to stay on.' });
+  }
+  saveCharmConfig({ enabled: enabled });
+  res.json({ ok: true });
 });
 
 app.get('/api/admin/users', (req, res) => {

@@ -9,9 +9,21 @@ the Claude-artifact version which only remembered signups in one browser.
 
 ## What's inside
 - `server.js` — the whole backend (Node.js + Express)
-- `public/index.html` — the page people see (login / signup / admin)
+- `public/index.html` — the page people see (login / signup)
+- `private/charms.html` — the actual Charm Dangle app; only reachable by
+  logged-in visitors, at `/charms` (see `requireLogin` in `server.js`)
 - `data/users.json` — where accounts are stored (created automatically)
+- `data/charm-config.json` — which charms are turned on (created automatically)
 - `package.json` — the list of packages it needs
+
+## How login and the admin panel connect now
+- A normal user who signs up or logs in is sent straight to `/charms`,
+  which shows only the charms the admin has switched on.
+- Logging in as the admin (the fixed username/password below) instead
+  opens **Charm Control**: a list of every charm with an on/off switch,
+  plus the list of registered users. Flipping switches and pressing
+  **Save charms** changes what every user sees immediately (next time
+  they open or refresh `/charms`).
 
 ## 1. Change the admin password first
 Open `server.js` and change these two lines near the top:
