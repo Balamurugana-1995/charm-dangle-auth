@@ -1,0 +1,18 @@
+{
+  "name": "charm-dangle-auth",
+  "version": "1.0.0",
+  "private": true,
+  "description": "A tiny real sign-up/login website that opens the Charm Dangle artifact after a successful login.",
+  "main": "server.js",
+  "scripts": {
+    "start": "node server.js"
+  },
+  "engines": {
+    "node": ">=18"
+  },
+  "dependencies": {
+    "express": "^4.19.2",
+    "express-session": "^1.18.0",
+    "bcryptjs": "^2.4.3"
+  }
+}
