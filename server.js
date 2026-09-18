@@ -1,3 +1,5 @@
+require('dotenv').config();
+
 const express = require('express');
 const session = require('express-session');
 const bcrypt = require('bcryptjs');
@@ -9,6 +11,16 @@ const PORT = process.env.PORT || 3000;
 const DATA_FILE = path.join(__dirname, 'data', 'users.json');
 const CHARM_CONFIG_FILE = path.join(__dirname, 'data', 'charm-config.json');
 
+const { initializeApp, cert } = require('firebase-admin/app');
+const { getAuth } = require('firebase-admin/auth');
+
+const serviceAccount = require('./serviceAccountKey.json');
+
+const firebaseApp = initializeApp({
+  credential: cert(serviceAccount)
+});
+
+const firebaseAuth = getAuth(firebaseApp);
 // The full set of charms the Charm Dangle page knows how to show.
 // Keep this list in sync with the `id` values inside private/charms.html.
 const ALL_CHARM_IDS = ['nazar', 'hamsa', 'ghanta', 'doll', 'drishti', 'nimbu', 'clover', 'custom'];
@@ -33,9 +45,13 @@ const CHARM_URL = '/charms';
 // hardcoded values below and set ADMIN_USER / ADMIN_PASS / SESSION_SECRET as
 // environment variables on your hosting provider instead, so the password
 // isn't sitting in your source code.
-const ADMIN_USER = process.env.ADMIN_USER || 'balamurugana';
-const ADMIN_PASS = process.env.ADMIN_PASS || 'Balamurugan@2026';
-const SESSION_SECRET = process.env.SESSION_SECRET || 'please-change-this-secret';
+const ADMIN_USER = process.env.ADMIN_USER;
+const ADMIN_PASS = process.env.ADMIN_PASS;
+const SESSION_SECRET = process.env.SESSION_SECRET;
+
+if (!ADMIN_USER || !ADMIN_PASS || !SESSION_SECRET) {
+  throw new Error('Missing required environment variables.');
+}
 // ----------------------------------------------------------------------------
 
 if (!fs.existsSync(path.dirname(DATA_FILE))) {
@@ -147,7 +163,42 @@ app.post('/api/login', (req, res) => {
   req.session.isAdmin = false;
   res.json({ ok: true, user: name, charmUrl: CHARM_URL });
 });
+app.post('/api/sessionLogin', async (req, res) => {
+  try {
+    const idToken = req.body && req.body.idToken;
 
+    if (!idToken) {
+      return res.status(400).json({
+        error: 'Firebase ID token is required.'
+      });
+    }
+
+    const decodedToken = await firebaseAuth.verifyIdToken(idToken);
+
+    const email = decodedToken.email;
+
+    if (!email) {
+      return res.status(401).json({
+        error: 'A verified email is required.'
+      });
+    }
+
+    req.session.user = email;
+    req.session.isAdmin = false;
+
+    res.json({
+      ok: true,
+      user: email,
+      charmUrl: CHARM_URL
+    });
+  } catch (error) {
+    console.error('Firebase session login failed:', error.message);
+
+    res.status(401).json({
+      error: 'Firebase authentication failed.'
+    });
+  }
+});
 app.post('/api/logout', (req, res) => {
   req.session.destroy(() => res.json({ ok: true }));
 });
